@@ -27,7 +27,8 @@
         const redirectURL = await fetch(scriptURL + '?getRedirectURL=true')
           .then(response => response.text());
 
-        window.location.href = redirectURL;
+        // Rediriger complètement sans concaténation
+        window.location.replace(redirectURL);
 
       } catch (error) {
         alert("Impossible d’obtenir la localisation : " + error.message);
