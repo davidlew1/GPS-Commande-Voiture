@@ -1,25 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
+  <meta charset="UTF-8">
   <title>Localisation</title>
   <script>
     const scriptURL = "https://script.google.com/macros/s/AKfycbyzp5OBxiya8wyAF-miJ5pzz29hzHCtcFDNDpTj77gm7DSU6UUYLO0jGFLvc3C98C_l/exec";
 
     async function sendLocation() {
       try {
+        // Obtenir la position GPS
         const position = await new Promise((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error("La géolocalisation n'est pas supportée par ce navigateur."));
+          }
           navigator.geolocation.getCurrentPosition(resolve, reject);
         });
 
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
 
-        // Envoi GPS à Apps Script
+        // Envoi des coordonnées GPS (via GET pour compatibilité avec Apps Script)
         await fetch(`${scriptURL}?id=test&latitude=${latitude}&longitude=${longitude}`, {
-          method: "POST"
+          method: "GET" // Apps Script ne gère pas bien le POST avec body sans traitement côté serveur
         });
 
-        // Récupération de l'URL
+        // Récupération de l'URL de redirection
         const urlResp = await fetch(`${scriptURL}?data=url`);
         const urlText = await urlResp.text();
 
@@ -31,11 +36,13 @@
         const utterance = new SpeechSynthesisUtterance(msgText);
         speechSynthesis.speak(utterance);
 
-        // Redirection
-        window.location.href = urlText;
+        // Attendre un peu la lecture avant redirection
+        setTimeout(() => {
+          window.location.href = urlText.trim();
+        }, 4000); // Attend 4 secondes
 
       } catch (error) {
-        alert("Erreur : " + error.message);
+        alert("Erreur lors de l'envoi de la position : " + error.message);
       }
     }
 
