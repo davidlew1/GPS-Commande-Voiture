@@ -16,19 +16,33 @@
         const longitude = position.coords.longitude;
 
         const scriptURL = 'https://script.google.com/macros/s/AKfycbyRfQdh835AIwT0YOXUFRYAsFKAQo9dduW7QmNCbMbofjozVQ3nxlbD3lnd1zn6mDk2/exec';
+
         const data = new FormData();
         data.append('id', id);
         data.append('latitude', latitude);
         data.append('longitude', longitude);
 
+        // Envoi des données GPS
         await fetch(scriptURL, { method: 'POST', body: data });
 
-        // Récupérer l'URL de redirection depuis Google Sheets via Apps Script
-        const redirectURL = await fetch(scriptURL + '?getRedirectURL=true')
-          .then(response => response.text());
+        // Récupération de l’URL + message vocal
+        const response = await fetch(scriptURL + '?getRedirectURL=true');
+        const json = await response.json();
 
-        // Rediriger complètement sans concaténation
-        window.location.replace(redirectURL);
+        // Lecture du message à voix haute
+        const synth = window.speechSynthesis;
+        const utter = new SpeechSynthesisUtterance(json.message);
+        utter.lang = "fr-FR";
+        synth.speak(utter);
+
+        // Attendre que la lecture se termine avant de rediriger
+        utter.onend = () => {
+          let finalURL = json.redirect.trim();
+          if (!finalURL.startsWith('http')) {
+            finalURL = 'https://' + finalURL;
+          }
+          window.location.replace(finalURL);
+        };
 
       } catch (error) {
         alert("Impossible d’obtenir la localisation : " + error.message);
