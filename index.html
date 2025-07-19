@@ -8,7 +8,6 @@
 
     async function sendLocation() {
       try {
-        // Obtenir la position GPS
         const position = await new Promise((resolve, reject) => {
           if (!navigator.geolocation) {
             reject(new Error("La géolocalisation n'est pas supportée par ce navigateur."));
@@ -19,30 +18,28 @@
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
 
-        // Envoi des coordonnées GPS (via GET pour compatibilité avec Apps Script)
+        // Envoi des coordonnées
         await fetch(`${scriptURL}?id=test&latitude=${latitude}&longitude=${longitude}`, {
-          method: "GET" // Apps Script ne gère pas bien le POST avec body sans traitement côté serveur
+          method: "GET"
         });
 
-        // Récupération de l'URL de redirection
+        // Récupération de l'URL
         const urlResp = await fetch(`${scriptURL}?data=url`);
-        const urlText = await urlResp.text();
+        const urlText = await urlResp.text(); // ✅ C'est bien du texte
 
         // Récupération du message vocal
         const msgResp = await fetch(`${scriptURL}?data=message`);
-        const msgText = await msgResp.text();
+        const msgText = await msgResp.text(); // ✅
 
-        // Lecture vocale
         const utterance = new SpeechSynthesisUtterance(msgText);
         speechSynthesis.speak(utterance);
 
-        // Attendre un peu la lecture avant redirection
         setTimeout(() => {
           window.location.href = urlText.trim();
-        }, 4000); // Attend 4 secondes
+        }, 4000);
 
       } catch (error) {
-        alert("Erreur lors de l'envoi de la position : " + error.message);
+        alert("Erreur : " + error.message);
       }
     }
 
